@@ -1,13 +1,5 @@
 ---
-- name: "Ensure swap is disabled"
-  command: "swapoff -a"
-  changed_when: false
-
-- name: "Ensure swap file doesn't exist (if configured)."
-  file:
-    path: "{{ swap_file_path }}"
-    state: absent
-  when: swap_file_path is defined
+- include_tasks: inc/_sanity_checks.yml
 
 - name: "Letting iptables see bridged traffic"
   copy:

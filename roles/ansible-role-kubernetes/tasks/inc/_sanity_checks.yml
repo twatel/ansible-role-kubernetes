@@ -1,0 +1,18 @@
+---
+- name: ensure hosts cpu requirements
+  assert:
+    that:
+      - ansible_processor_cores >= 2
+    msg: >-
+      k8s CPU requirements is >= 2 CPUs
+
+- name: ensure hosts memory requirements
+  assert:
+    that:
+      - ansible_memtotal_mb  >= 2048
+    msg: >-
+      k8s memory requirements is >= 2048 MB
+
+- name: "Ensure swap is disabled"
+  command: "swapoff -a"
+  changed_when: false
