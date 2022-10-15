@@ -25,7 +25,7 @@ It configures:
 
 ``kubernetes_cluster``: Specifies if installation is for an cluster or single node  
 
-/!\ Required if ``kubernetes_cluster`` is equals true /!\
+/!\ Required if ``kubernetes_cluster`` is equals true /!\  
 ``kubernetes_master_node``: Specifies which role the node use  
 
 ### Hosted variables
@@ -44,6 +44,14 @@ worker vars file :
 # kubernetes part
 kubernetes_cluster: true
 kubernetes_master_node: false
+```
+
+For single_node installation  
+master vars file :  
+```
+---
+# kubernetes part
+kubernetes_cluster: false
 ```
 
 ## Testing
