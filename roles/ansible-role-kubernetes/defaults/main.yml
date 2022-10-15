@@ -1,0 +1,38 @@
+---
+required_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg-agent
+  - jq
+
+docker_required_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  
+containerd_directory: "/etc/containerd"
+
+kubernetes_required_modules:
+  - overlay
+  - br_netfilter
+
+kubernetes_required_packages:
+  - kubelet
+  - kubeadm
+  - kubectl
+
+kubernetes_cluster: false
+
+kubernetes_version: "1.23"
+kubernetes_gpg_key_url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+kubernetes_gpg_key_destination: "/usr/share/keyrings/kubernetes-archive-keyring.gpg"
+kubernetes_apt_repository: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
+kubernetes_apiserver_advertise_address: "{{ ansible_host }}"
+kubernetes_pod_network_cidr: "10.244.0.0/16"
+kubernetes_home_user_directory: "~"
+kubernetes_default_username: "root"
+#kubernetes_network_nodes_url: "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+kubernetes_network_nodes_url: "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+
+kubernetes_ingress_controller_url: "https://raw.githubusercontent.com/haproxytech/kubernetes-ingress/master/deploy/haproxy-ingress.yaml"

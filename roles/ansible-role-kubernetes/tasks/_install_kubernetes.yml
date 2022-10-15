@@ -1,0 +1,28 @@
+---
+- name: "Download Google Cloud public signing key"
+  get_url:
+    url: "{{ kubernetes_gpg_key_url }}"
+    dest: "{{ kubernetes_gpg_key_destination }}"
+
+- name: "Add Kubernetes apt repository"
+  ansible.builtin.apt_repository:
+    repo: "{{ kubernetes_apt_repository }}"
+    filename: /etc/apt/sources.list.d/kubernetes.list
+    state: present
+
+- name: "Update cache"
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+
+- name: Add Kubernetes apt preferences file to pin a version.
+  template:
+    src: apt-preferences-kubernetes.j2
+    dest: /etc/apt/preferences.d/kubernetes
+    mode: 0644
+
+- name: "Install kubernetes packages"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ kubernetes_required_packages }}"

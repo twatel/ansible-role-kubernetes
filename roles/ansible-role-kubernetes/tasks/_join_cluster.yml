@@ -1,0 +1,34 @@
+---
+- name: WORKER - Generate cluster token
+  shell: "kubeadm token create --print-join-command --description temp-token --ttl 5m"
+  args:
+    executable: /bin/bash
+  when: 
+    - kubernetes_master_node == true
+    - kubernetes_cluster == true
+  register: kubernetes_worker_token
+  changed_when: false
+
+# Set kubernetes_join_cluster_command from 'WORKER - Generate cluster token') task
+# This task stdout is the kubeadm command to join the cluster
+- name: "Set the kubeadm token variable for the worker nodes group"
+  set_fact:
+    kubernetes_join_cluster_command: "{{ kubernetes_worker_token }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['workers'] }}"
+  when: 
+    - kubernetes_master_node == true
+    - kubernetes_cluster == true
+
+- name: WORKER - Check if node is already plug to the cluster
+  stat:
+    path: "/etc/kubernetes/kubelet.conf"
+  register: stat_result
+  when: kubernetes_master_node == false
+
+- name: WORKER - Join cluster with kubeadm
+  command: "{{ kubernetes_join_cluster_command.stdout }}"
+  when:
+    - kubernetes_master_node == false
+    - not stat_result.stat.exists

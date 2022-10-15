@@ -1,0 +1,8 @@
+---
+- name: Testing collection deployment
+  hosts: cluster
+  gather_facts: true
+  become: yes
+
+  roles:
+    - ansible-role-kubernetes

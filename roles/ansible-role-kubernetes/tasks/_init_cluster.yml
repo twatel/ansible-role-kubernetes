@@ -1,0 +1,25 @@
+---
+- name: "Init kubeadm"
+  shell: >-
+    kubeadm init --apiserver-advertise-address {{ kubernetes_apiserver_advertise_address }} --pod-network-cidr {{ kubernetes_pod_network_cidr }}
+  args:
+    executable: /bin/bash
+  register: kubeadm_return
+
+- name: "Ensure kubelet is started and enabled at boot"
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: "Create .kube directory"
+  file:
+    path: "{{ kubernetes_home_user_directory }}/.kube"
+    state: directory
+
+- name: "Copy kubernetes admin conf to .kube directory"
+  file:
+    src: "/etc/kubernetes/admin.conf"
+    dest: "{{ kubernetes_home_user_directory }}/.kube/config"
+    state: link
+    mode: 0644

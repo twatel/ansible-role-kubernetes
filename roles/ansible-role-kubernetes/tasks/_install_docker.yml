@@ -1,0 +1,41 @@
+---
+- name: "Import Docker apt repository gpg key"
+  apt_key:
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    state: present
+
+- name: "Add Docker repository to the system"
+  apt_repository:
+    repo: "deb https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: "Update cache"
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+
+- name: "Install docker"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ docker_required_packages }}"
+
+- name: "Create containerd directory"
+  file:
+    path: "{{ containerd_directory }}"
+    state: directory
+
+- name: "Configure containerd"
+  template:
+    src: config.toml.j2
+    dest: "{{ containerd_directory }}/config.toml"
+  notify: restart containerd
+
+- name: "Ensure systemd_Cgroup is on True"
+  lineinfile:
+    dest: "{{ containerd_directory }}/config.toml"
+    regexp: "^    systemd_cgroup"
+    line: "    systemd_cgroup = true"
+    insertafter: "systemd_cgroup"
+    state: present
+    backup: yes

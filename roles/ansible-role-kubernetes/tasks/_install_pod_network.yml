@@ -1,0 +1,7 @@
+---
+- name: "Install the network pod"
+  shell: "kubectl apply -f {{ kubernetes_network_nodes_url }}"
+  args:
+    executable: /bin/bash
+  register: network_result
+  changed_when: "'created' in network_result.stdout"

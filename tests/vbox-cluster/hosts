@@ -1,0 +1,12 @@
+master-01
+worker-01
+
+[masters]
+master-01
+
+[workers]
+worker-01
+
+[cluster:children]
+masters
+workers

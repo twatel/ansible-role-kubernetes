@@ -1,0 +1,15 @@
+---
+- name: "Ensure single node not already exist"
+  shell: "kubectl get nodes -o json | jq '.items[].spec.taints'"
+  args:
+    executable: /bin/bash
+  register: ensure_single_node
+  when: 
+    - kubernetes_cluster == false
+  changed_when: false
+
+- name: "Create single node cluster"
+  command: "kubectl taint nodes --all node-role.kubernetes.io/master-"
+  when: 
+    - kubernetes_cluster == false
+    - ensure_single_node.stdout != "null"

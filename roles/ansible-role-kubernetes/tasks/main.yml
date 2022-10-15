@@ -1,0 +1,91 @@
+---
+- name: "Ensure swap is disabled"
+  command: "swapoff -a"
+  changed_when: false
+
+- name: "Ensure swap file doesn't exist (if configured)."
+  file:
+    path: "{{ swap_file_path }}"
+    state: absent
+  when: swap_file_path is defined
+
+- name: "Letting iptables see bridged traffic"
+  copy:
+    content: >-
+      br_netfilter
+    dest: /etc/modules-load.d/k8s.conf
+
+- name: "Letting iptables see bridged traffic"
+  copy:
+    content: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+    dest: /etc/sysctl.d/k8s.conf
+
+- name: "Add module configuration"
+  copy:
+    content: |
+      overlay
+      br_netfilter
+    dest: /etc/modules-load.d/containerd.conf
+
+- name: "Load required modules"
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ kubernetes_required_modules }}"
+
+- name: "Setup required sysctl params"
+  copy:
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.ipv4.ip_forward                 = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+    dest: /etc/sysctl.d/99-kubernetes-cri.conf
+
+- name: "Reload sysctl"
+  command: "sysctl --system"
+  changed_when: false
+
+- name: "Install required installation packages"
+  apt:
+    name: "{{ required_packages }}"
+    state: present
+    force_apt_get: yes
+    update_cache: yes
+
+- name: "Install docker"
+  include_tasks: _install_docker.yml
+
+- name: "Install kubernetes"
+  include_tasks: _install_kubernetes.yml
+
+- name: "Check if cluster is already up"
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: cluster_state
+
+- name: "Prepare the master nodes"
+  include_tasks: _init_cluster.yml
+  when:
+    - kubernetes_master_node == true or kubernetes_cluster == false
+    - not cluster_state.stat.exists
+
+- name: MASTER - Install pod network to the cluster
+  include_tasks: _install_pod_network.yml
+  when: 
+    - kubernetes_master_node == true or kubernetes_cluster == false
+
+- name: WORKER - Join k8s cluster
+  include_tasks: _join_cluster.yml
+
+- name: "Set Ingress Pod controller to redirect traffic to worker nodes"
+  command: "kubectl apply -f {{ kubernetes_ingress_controller_url }}"
+  when: 
+    - kubernetes_master_node == true or kubernetes_cluster == false
+  register: ingress_install
+  changed_when: "'created' in ingress_install.stdout"
+
+- name: Create single node cluster
+  include_tasks: _single_node.yml
+  when: kubernetes_cluster == false
